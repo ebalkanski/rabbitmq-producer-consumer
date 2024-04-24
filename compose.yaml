@@ -1,0 +1,43 @@
+networks:
+  rabbitmq:
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_queue
+    networks:
+      - rabbitmq
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    ports:
+      - "8888:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status"]
+      start_period: 10s
+      interval: 5s
+      timeout: 15s
+      retries: 5
+
+  producer:
+    container_name: producer
+    build:
+      context: ./producer
+    networks:
+      - rabbitmq
+    volumes:
+      - "./producer:/producer"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  consumer:
+    container_name: consumer
+    build:
+      context: ./producer
+    networks:
+      - rabbitmq
+    volumes:
+      - "./consumer:/consumer"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
